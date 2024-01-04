@@ -1,0 +1,65 @@
+version: "3"
+
+networks:
+  codeigniter:
+
+services:
+  site:
+    build:
+      context: ./dockerfiles
+      dockerfile: nginx.dockerfile
+      args:
+        - UID=${UID:-1000}
+        - GID=${GID:-1000}
+        - USER=${USER:-youruser}
+    container_name: nginx
+    ports:
+      - 8080:80
+    volumes:
+      - ./:/var/www/html:delegated
+    depends_on:
+      - php
+      - mysql
+      - mailhog
+    networks:
+      - codeigniter
+
+  mysql:
+    image: mariadb:10.11.6
+    container_name: mysql
+    restart: unless-stopped
+    tty: true
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_DATABASE: dev-default
+      MYSQL_USER: saputra
+      MYSQL_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    networks:
+      - codeigniter
+
+  php:
+    build:
+      context: ./dockerfiles
+      dockerfile: php.dockerfile
+      args:
+        - UID=${UID:-1000}
+        - GID=${GID:-1000}
+        - USER=${USER:-youruser}
+    container_name: php
+    volumes:
+      - ./:/var/www/html:delegated
+    networks:
+      - codeigniter
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    ports:
+      - 1025:1025
+      - 8025:8025
+    networks:
+      - codeigniter
